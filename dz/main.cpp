@@ -75,6 +75,8 @@
 class Shape {
 public:
 	virtual void Show() const = 0;
+	virtual void Save(std::ofstream& out) const = 0;
+	virtual void Load(std::ifstream& in) = 0;
 	virtual ~Shape() {}
 };
 
@@ -88,6 +90,12 @@ public:
 	void Show() const override {
 		std::cout << "Square: (" << x << ", " << y << ") Side: " << side << std::endl;
 	}
+	void Save(std::ofstream& out) const override {
+		out << "Square " << x << " " << y << " " << side << std::endl;
+	}
+	void Load(std::ifstream& in) override {
+		in >> x >> y >> side;
+	}
 };
 
 class Rectangle : public Shape {
@@ -97,6 +105,12 @@ public:
 	Rectangle(int x = 0, int y = 0, int w = 1, int h = 1) : x(x), y(y), width(w), height(h) {}
 	void Show() const override {
 		std::cout << "Rectangle: (" << x << ", " << y << ") W: " << width << " H: " << height << std::endl;
+	}
+	void Save(std::ofstream& out) const override {
+		out << "Rectangle " << x << " " << y << " " << width << " " << height << std::endl;
+	}
+	void Load(std::ifstream& in) override {
+		in >> x >> y >> width >> height;
 	}
 };
 
@@ -108,6 +122,12 @@ public:
 	void Show() const override {
 		std::cout << "Circle: Center(" << cx << ", " << cy << ") Radius: " << radius << std::endl;
 	}
+	void Save(std::ofstream& out) const override {
+		out << "Circle " << cx << " " << cy << " " << radius << std::endl;
+	}
+	void Load(std::ifstream& in) override {
+		in >> cx >> cy >> radius;
+	}
 };
 
 class Ellipse : public Shape {
@@ -118,7 +138,33 @@ public:
 	void Show() const override {
 		std::cout << "Ellipse: (" << x << ", " << y << ") W: " << width << " H: " << height << std::endl;
 	}
+	void Save(std::ofstream& out) const override {
+		out << "Ellipse " << x << " " << y << " " << width << " " << height << std::endl;
+	}
+	void Load(std::ifstream& in) override {
+		in >> x >> y >> width >> height;
+	}
 };
+
+void SaveShapes(Shape* shapes[], int count, const std::string& filename) {
+	std::ofstream out(filename);
+	for (int i = 0; i < count; ++i) shapes[i]->Save(out);
+	out.close();
+}
+
+void LoadShapes(Shape* shapes[], int& count, const std::string& filename) {
+	std::ifstream in(filename);
+	count = 0;
+	std::string type;
+	while (in >> type && count < 10) {
+		if (type == "Square") shapes[count] = new Square();
+		else if (type == "Rectangle") shapes[count] = new Rectangle();
+		else if (type == "Circle") shapes[count] = new Circle();
+		else if (type == "Ellipse") shapes[count] = new Ellipse();
+		if (shapes[count]) { shapes[count]->Load(in); count++; }
+	}
+	in.close();
+}
 
 int main() {
 	Shape* shapes[10];
@@ -128,12 +174,13 @@ int main() {
 	shapes[2] = new Circle(5, 5, 10);
 	shapes[3] = new Ellipse(2, 3, 8, 4);
 
+	SaveShapes(shapes, count, "shapes.txt");
 
-	for (size_t i = 0; i < count; i++)
-		shapes[i]->Show();
+	for (size_t i = 0; i < count; ++i) { shapes[i]->Show(); delete shapes[i]; }
+    
+	LoadShapes(shapes, count, "shapes.txt");
 
-	for (size_t i = 0; i < count; i++)
-		delete shapes[i];
+	for (size_t i = 0; i < count; i++) { delete shapes[i]; }
 
 	return 0;
 }
